@@ -141,7 +141,6 @@ Controller::Controller()
   modules.addModule(networkControl);
   modules.addModule(new HeatingController());
   modules.addModule(displayControl);
-  modules.addModule(new PWMController());
 
   setup();
 }
