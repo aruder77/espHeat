@@ -3,7 +3,8 @@
 HeatingController::HeatingController() {
     prefs->registerConfigParam("kp", "PID-Konstante Kp", "2", 5, this);
     prefs->registerConfigParam("tn", "PID-Konstante Tn", "120", 5, this); 
-    prefs->registerConfigParam("flowTemperatureTarget", "Ziel-Vorlauftemperatur", "40", 5, this); 
+    prefs->registerConfigParam("flowTemperatureSlope", "Vorlauftemperatur Steigung", "-0.5", 5, this); 
+    prefs->registerConfigParam("flowTemperatureOrigin", "Vorlauftemperatur Ursprung (0°)", "30", 5, this); 
 }
 
 const char *HeatingController::getName() {
@@ -21,7 +22,10 @@ void HeatingController::setup() {
     tn = prefs->getDouble("tn");
     flowTemperatureRegulator->setTunings(kp, tn);
 
-    targetTemp = prefs->getDouble("flowTemperatureTarget");
+    flowTempSlope = prefs->getDouble("flowTemperatureSlope");
+    flowTempOrigin = prefs->getDouble("flowTemperatureOrigin");
+    targetFlowTemperatureCalculator->setFlowTemperatureSlope(flowTempSlope);
+    targetFlowTemperatureCalculator->setFlowTemperatureSlope(flowTempOrigin);
 
     // always on for now
     heatPumpController->on();
@@ -33,8 +37,12 @@ void HeatingController::configUpdate(const char *id, const char *value) {
         flowTemperatureRegulator->setTunings(atof(value), tn);
     } else if (strcmp(id, "tn") == 0) {
         flowTemperatureRegulator->setTunings(kp, atof(value));
-    } else if (strcmp(id, "flowTemperatureTarget") == 0) {
-        targetTemp = atof(value);
+    } else if (strcmp(id, "flowTemperatureSlope") == 0) {
+        flowTempSlope = atof(value);
+        targetFlowTemperatureCalculator->setFlowTemperatureSlope(flowTempSlope);
+    } else if (strcmp(id, "flowTemperatureOrigin") == 0) {
+        flowTempOrigin = atof(value);
+        targetFlowTemperatureCalculator->setFlowTemperatureSlope(flowTempOrigin);
     }
 }
 
@@ -43,9 +51,10 @@ void HeatingController::everySecond() {
     // every minute
     if (loopCounter == 10) {
         double flowTemperature = temperatureReader->getFlowTemperature();
+        double outsideTemperature = temperatureReader->getOutsideTemperature();
 
-        //double targetFlowTemperature = targetFlowTemperatureCalculator->calculateTargetFlowTemperature(outsideTemperature);
-        double valveTarget = flowTemperatureRegulator->calculateValveTarget(flowTemperature, targetTemp);
+        double targetFlowTemperature = targetFlowTemperatureCalculator->calculateTargetFlowTemperature(outsideTemperature);
+        double valveTarget = flowTemperatureRegulator->calculateValveTarget(flowTemperature, targetFlowTemperature);
         char printStr[100];
         sprintf(printStr, "Ventil aktuell: %.1f, Ziel: %.1f\n", valveCurrent, valveTarget);
         Log.notice(printStr);
