@@ -1,3 +1,18 @@
+/*
+  Copyright (C) 2019 Axel Ruder
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef CONTROLLER_H_
 #define CONTROLLER_H_
 
@@ -10,6 +25,7 @@
 #include <NetworkModule.h>
 #include <HeatingController.h>
 #include <DisplayControl.h>
+#include <OneButton.h>
 
 /* topics */
 #define OTA_TOPIC "ota"
@@ -43,11 +59,16 @@ class Modules {
 
 class Controller : public NetworkModule, public PrefsClient {
     public:
-        Controller();
-        ~Controller();
+        virtual ~Controller();
+
+        static Controller* getInstance();           
 
         void setup();
         void loop();
+
+        void buttonClick();
+        void buttonDoubleClick();
+        void buttonLongPressed();
         
         virtual void commandReceived(const char *command, const char *payload);
         virtual void getTelemetryData(char *targetBuffer);        
@@ -56,6 +77,9 @@ class Controller : public NetworkModule, public PrefsClient {
     private:
         static const int BAUD_RATE = 115200;
         static const int LOOP_INTERVAL_IN_MS = 10;
+        static const int LONG_PRESS_TIME = 10000;
+
+        static Controller *instance;
         const char *root_ca = \
             "-----BEGIN CERTIFICATE-----\n"\
             "MIIDSjCCAjKgAwIBAgIQRK+wgNajJ7qJMDmGLvhAazANBgkqhkiG9w0BAQUFADA/\n"\
@@ -78,11 +102,14 @@ class Controller : public NetworkModule, public PrefsClient {
             "Ob8VZRzI9neWagqNdwvYkQsEjgfbKbYK7p2CNTUQ\n"\
             "-----END CERTIFICATE-----";
 
+        Controller();
+
         NetworkControl* networkControl;
         DisplayControl* displayControl;
         Prefs* prefs;
         LedController* ledController;
         HeatingController* heatingController;
+        OneButton *oneButton;
 
         Modules modules;
 
@@ -94,6 +121,10 @@ class Controller : public NetworkModule, public PrefsClient {
 
         long timer = 0;
         int loopCounter = 0;
+
+        bool wasClicked = false;
+        bool wasDoubleClicked = false;
+        bool wasLongClicked = false;
 };
 
 #endif

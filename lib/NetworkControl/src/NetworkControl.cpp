@@ -1,14 +1,24 @@
 /*
- * NetworkControl.cpp
- *
- *  Created on: 22 Jun 2017
- *      Author: axel
- */
+  Copyright (C) 2019 Axel Ruder
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #include <NetworkControl.h>
 #include <Prefs.h>
 
 NetworkControl *NetworkControl::instance = 0;
+
+bool NetworkControl::saveConfig = false;
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
@@ -42,7 +52,6 @@ NetworkControl::NetworkControl() {
 	mqttClient = new PubSubClient(*espClient);
 
 	prefs = Prefs::getInstance();
-	Log.notice("NetworkControl Prefs %d\n", prefs);
 	ledController = LedController::getInstance();
 
 	// initialize prefs
@@ -57,6 +66,7 @@ NetworkControl::NetworkControl() {
 	mqttClient->setServer(mqtt_server, 1883);
 
 	prefs->get("clientId", clientId);
+	Log.notice("loaded clientId from eeprom: %s\n", clientId);
 }
 
 NetworkControl::~NetworkControl()
@@ -67,29 +77,34 @@ const char *NetworkControl::getName() {
 	return "network";
 }
 
+uint8_t NetworkControl::waitForConnectResult() {
+    unsigned long start = millis();
+    boolean keepConnecting = true;
+    uint8_t status;
+    while (keepConnecting) {
+      status = WiFi.status();
+      if (millis() > start + WIFI_CONNECT_TIMEOUT) {
+        keepConnecting = false;
+      }
+      if (status == WL_CONNECTED || status == WL_CONNECT_FAILED) {
+        keepConnecting = false;
+      }
+      delay(100);
+    }
+    return status;
+}
+
+
 void NetworkControl::afterSetup() {
-	//set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
-	wifiManager.setAPCallback(configModeCallback);
-	wifiManager.setSaveConfigCallback(saveConfigCallback);
-
-	PrefsItems *prefsItems = prefs->getPrefsItems();
-
-	Log.notice("number of config items: %d\n", prefsItems->length);
-	wifiParamCount = prefsItems->length;
-	params = new WiFiManagerParameter*[wifiParamCount];
-
-	for (int i = 0; i < wifiParamCount; i++)
-	{
-		Log.notice("adding config item %s\n", prefsItems->prefsItems[i]->id);
-		params[i] = new WiFiManagerParameter(prefsItems->prefsItems[i]->id, prefsItems->prefsItems[i]->prompt, prefsItems->prefsItems[i]->defaultValue, prefsItems->prefsItems[i]->length);
-		wifiManager.addParameter(params[i]);
-	}
 
 	ledController->blinkFast();
-	if (wifiManager.autoConnect())
+	WiFi.begin();
+	if (waitForConnectResult() == WL_CONNECTED)
 	{
 		//keep LED on
 		ledController->on();
+	} else {
+		enterConfigPortal();
 	}
 
 	// Allow the hardware to sort itself out
@@ -108,7 +123,7 @@ void NetworkControl::subscribeTopic(const char *clientId) {
 	mqttClient->subscribe(configTopic);
 
 	char statusTopic[100];
-	sprintf(statusTopic, "tele/%s/status", clientId);
+	sprintf(statusTopic, "tele/%s/hello", clientId);
 	send(statusTopic, "Hello, world!");	
 }
 
@@ -184,6 +199,14 @@ void NetworkControl::sendTelemetry(const char *data) {
 	send(teleTopic, data);
 }
 
+void NetworkControl::sendStat(const char *subTopic, const char *message)
+{
+	char statTopic[100] = {0};
+	sprintf(statTopic, "stat/%s/%s", clientId, subTopic);
+	Log.notice("MQTT send topic %s: %s\n", statTopic, message);
+	mqttClient->publish(statTopic, message);
+}
+
 bool NetworkControl::exists()
 {
 	return instance != 0;
@@ -206,11 +229,35 @@ void NetworkControl::configModeCallback(WiFiManager *myWiFiManager)
 
 //gets called when WiFiManager saves config
 void NetworkControl::saveConfigCallback() {
+	saveConfig = true;
 }
+
 
 void NetworkControl::enterConfigPortal()
 {
+	WiFiManager wifiManager;
+
 	Log.notice("entering config portal mode...\n");
+
+		//set callback that gets called when connecting to previous WiFi fails, and enters Access Point mode
+	wifiManager.setAPCallback(configModeCallback);
+	wifiManager.setSaveConfigCallback(saveConfigCallback);
+
+	PrefsItems *prefsItems = prefs->getPrefsItems();
+
+	Log.notice("number of config items: %d\n", prefsItems->length);
+	int wifiParamCount = prefsItems->length;
+	WiFiManagerParameter **params = new WiFiManagerParameter*[wifiParamCount];
+
+	for (int i = 0; i < wifiParamCount; i++)
+	{
+		Log.notice("adding config item %s\n", prefsItems->prefsItems[i]->id);
+		char currentValue[50];
+		prefs->get(prefsItems->prefsItems[i]->id, currentValue);
+		params[i] = new WiFiManagerParameter(prefsItems->prefsItems[i]->id, prefsItems->prefsItems[i]->prompt, currentValue, prefsItems->prefsItems[i]->length);
+		wifiManager.addParameter(params[i]);
+	}
+
 	ledController->blink();
 
 	char wpaKey[100];
@@ -224,9 +271,11 @@ void NetworkControl::enterConfigPortal()
 		delay(5000);
 	}
 
-	for (int i = 0; i < wifiParamCount; i++) {
-		Log.notice("saving wifiParam[%d] to prefs: %s, %s\n", i, params[i]->getID(), params[i]->getValue());
-		prefs->set(params[i]->getID(), params[i]->getValue());
+	if (saveConfig) {
+		saveConfig = false;
+		for (int i = 0; i < wifiParamCount; i++) {
+			prefs->set(params[i]->getID(), params[i]->getValue());
+		}
 	}
 
 	char buffer[100];
@@ -235,7 +284,7 @@ void NetworkControl::enterConfigPortal()
 
 	Log.notice("saved mqtt-server to eeprom: %s\n", buffer);
 
-	ledController->on();     
+	ESP.restart();
 }
 
 void NetworkControl::configUpdate(const char *id, const char *value) {
@@ -245,5 +294,9 @@ void NetworkControl::configUpdate(const char *id, const char *value) {
 		strcpy(clientId, value);
 		subscribeTopic(clientId);
 	}
+}
+
+void NetworkControl::reset() {
+	WiFi.disconnect(false, true);
 }
 
