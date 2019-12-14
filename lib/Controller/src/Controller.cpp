@@ -201,11 +201,11 @@ Controller::~Controller() {
 void Controller::setup() {
   enterConfigPortalPin = prefs->getInt("ConfigPortalPin");
   enterConfigPortalPin = 27;
-  oneButton = new OneButton(enterConfigPortalPin, true);
+  /*oneButton = new OneButton(enterConfigPortalPin, true);
   oneButton->setPressTicks(LONG_PRESS_TIME);
   oneButton->attachClick(click);
   oneButton->attachDoubleClick(doubleClick);
-  oneButton->attachLongPressStop(longPressed);
+  oneButton->attachLongPressStop(longPressed);*/
   
   networkControl->subscribeToCommand(OTA_TOPIC, this);
 
@@ -224,7 +224,7 @@ void Controller::loop()
 {
   unsigned long currentMillis = millis();
 
-  oneButton->tick();
+  //oneButton->tick();
 
   switch (state)
   {
