@@ -15,11 +15,11 @@ PIN assignments.
 * TFT
  ** TFT_MISO 25
  ** TFT_MOSI 23
- ** TFT_SCLK 19 -
- ** TFT_CS 22
- ** TFT_DC 21
- ** TFT_RST 18 -
- ** TFT_BL 5 -
+ ** TFT_SCLK 19  VSPIQ-MISO
+ ** TFT_CS 22    VSPIWP
+ ** TFT_DC 21    VSPIH2
+ ** TFT_RST 18 - VSPICLK
+ ** TFT_BL 5 -   VSPICS0
  * PWM
  ** PIN1 27
 
