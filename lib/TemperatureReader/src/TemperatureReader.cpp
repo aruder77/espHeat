@@ -2,18 +2,11 @@
 
 TemperatureReader::TemperatureReader() {
     prefs = Prefs::getInstance();
-    prefs->registerConfigParam("atFuehlerPin", "Außentemperatur-Fühler-Pin", "34", 3, this);
-    prefs->registerConfigParam("rueFuehlerPin", "Rücklauf-Temperatur-Fühler-Pin", "35", 3, this);
-    prefs->registerConfigParam("vFuehlerPin", "Vorlauf-Temperatur-Fühler-Pin", "32", 3, this);
 
     setup();
 }
 
 void TemperatureReader::setup() {
-    atFuehlerPin = prefs->getInt("atFuehlerPin");
-    vFuehlerPin = prefs->getInt("vFuehlerPin");
-    rueFuehlerPin = prefs->getInt("rueFuehlerPin");
-
     //Characterize ADC at particular atten
     adc_chars = (esp_adc_cal_characteristics_t *)calloc(1, sizeof(esp_adc_cal_characteristics_t));
     esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_0db, ADC_WIDTH_BIT_12, 3300, adc_chars);
