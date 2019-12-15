@@ -1,16 +1,10 @@
 #include "ValveController.h"
 
 ValveController::ValveController() {
-    prefs->registerConfigParam("openPin", "Ventil-Öffnen-Pin", "26", 3, this);
-    prefs->registerConfigParam("closePin", "Ventil-Schliessen-Pin", "27", 3, this);   
-
     setup();
 }
 
 void ValveController::setup() {
-    openPin = prefs->getInt("openPin");
-    closePin = prefs->getInt("closePin");    
-
     pinMode(openPin, OUTPUT);
     pinMode(closePin, OUTPUT);
 

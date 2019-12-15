@@ -13,7 +13,7 @@ class HeatPumpController : public PrefsClient {
 
     private:
         Prefs *prefs = Prefs::getInstance();
-        uint8_t pumpPin = 20;
+        uint8_t pumpPin = 5;
 };
 
 #endif

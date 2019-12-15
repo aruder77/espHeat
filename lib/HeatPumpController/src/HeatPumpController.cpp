@@ -1,8 +1,6 @@
 #include "HeatPumpController.h"
 
 HeatPumpController::HeatPumpController() {
-    prefs->registerConfigParam("pumpPin", "Heizungspumpe-Pin", "4", 3, this);
-    pumpPin = prefs->getInt("pumpPin");
     pinMode(pumpPin, OUTPUT);
 }
 
