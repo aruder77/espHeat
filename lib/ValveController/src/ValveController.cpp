@@ -9,9 +9,16 @@ void ValveController::setup() {
     pinMode(closePin, OUTPUT);
 
     // set valve to a defined, safe value (0%)
+    digitalWrite(openPin, HIGH);
+    digitalWrite(closePin, LOW);
+
+    delay(VALVE_ONE_PERCENT_OPEN_CYCLES * 10 * 100);
+    
     digitalWrite(openPin, LOW);
     digitalWrite(closePin, HIGH);
-    //delay(VALVE_ONE_PERCENT_OPEN_CYCLES * 10 * 100);
+
+    delay(VALVE_ONE_PERCENT_OPEN_CYCLES * 10 * 100);
+    
     digitalWrite(openPin, LOW);
     digitalWrite(closePin, LOW);
 }

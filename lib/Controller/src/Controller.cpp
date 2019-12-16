@@ -115,7 +115,7 @@ void Modules::getTelemetryData(char *targetBuffer) {
     strcpy(telemetryBuffer + currentLength, "\":");
     currentLength += 2;
 
-    char moduleBuffer[100] = {0};
+    char moduleBuffer[200] = {0};
     modules[i]->getTelemetryData(moduleBuffer);
     strcpy(telemetryBuffer + currentLength, moduleBuffer);
     currentLength += strlen(moduleBuffer);

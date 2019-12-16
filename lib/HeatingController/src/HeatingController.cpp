@@ -77,8 +77,10 @@ void HeatingController::getTelemetryData(char *targetBuffer) {
     double returnTemperature = temperatureReader->getReturnTemperature();
     int valveCurrent = valveController->getValveCurrent();
     int valveTarget = valveController->getValveTarget();
+    double targetFlowTemperature = targetFlowTemperatureCalculator->calculateTargetFlowTemperature(outsideTemperature);
 
-    char telemetryData[100] = {0};
-    sprintf(telemetryData, "{\"outside\":%.1f,\"return\":%.1f,\"flow\":%.1f,\"valveCurrent\":%d,\"valveTarget\":%d}", outsideTemperature, returnTemperature, flowTemperature, valveCurrent, valveTarget);
+
+    char telemetryData[200] = {0};
+    sprintf(telemetryData, "{\"outside\":%.1f,\"return\":%.1f,\"flow\":%.1f,\"targetFlowTemperature\":%.1f,\"valveCurrent\":%d,\"valveTarget\":%d}", outsideTemperature, returnTemperature, flowTemperature, targetFlowTemperature, valveCurrent, valveTarget);
     strcpy(targetBuffer, telemetryData);
 }
