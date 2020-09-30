@@ -11,8 +11,8 @@ class TargetFlowTemperatureCalculator {
         void setFlowTemperatureOrigin(double origin);
 
     private:
-        double slope = -0.5;
-        double origin = 32.0;
+        double slope = -0.3;
+        double origin = 35.0;
         double maxFlowTemp = 40.0;
 };
 
