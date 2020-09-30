@@ -38,10 +38,9 @@ class HeatingController : public Module, public PrefsClient {
         int loopCounter = 0;
 
         double flowTempSlope = -0.5;
-        double flowTempOrigin = 30.0;
+        double flowTempOrigin = 32.0;
         
         double valveTarget = 0.0;
-        double valveCurrent = 0.0;
 
         double kp = 2.0;
         double tn = 120;

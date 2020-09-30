@@ -6,6 +6,7 @@
 #include <esp_adc_cal.h>
 #include <ArduinoLog.h>
 #include <Filters.h>
+#include <Arduino.h>
 
 class TemperatureReader : public PrefsClient {
 

@@ -8,7 +8,7 @@
 class FlowTemperatureRegulator {
     public:
         FlowTemperatureRegulator();
-        double calculateValveTarget(double currentFlowTemperature, double targetFlowTemperature);
+        int calculateValveTarget(double currentFlowTemperature, double targetFlowTemperature);
         void setTunings(double kp, double tn);
 
     private:

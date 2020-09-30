@@ -8,7 +8,7 @@ FlowTemperatureRegulator::FlowTemperatureRegulator() {
 }
 
 
-double FlowTemperatureRegulator::calculateValveTarget(double currentFlowTemperature, double targetFlowTemperature) {
+int FlowTemperatureRegulator::calculateValveTarget(double currentFlowTemperature, double targetFlowTemperature) {
     this->currentFlowTemperature = currentFlowTemperature;
     this->targetFlowTemperature = targetFlowTemperature;
 
@@ -16,7 +16,7 @@ double FlowTemperatureRegulator::calculateValveTarget(double currentFlowTemperat
     char buffer[100];
     sprintf(buffer, "FlowTemperatureRegulator: Current: %.1f, Target: %.1f, ValveTarget: %.1f\n", this->currentFlowTemperature, this->targetFlowTemperature, valveTarget);
     Log.notice(buffer);
-    return valveTarget;
+    return (int)valveTarget;
 }
 
 void FlowTemperatureRegulator::setTunings(double kp, double tn) {

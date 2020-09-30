@@ -187,10 +187,10 @@ Controller::Controller()
 
   // create all modules 
   networkControl = NetworkControl::getInstance();
-  displayControl = DisplayControl::getInstance();
+  //displayControl = DisplayControl::getInstance();
   modules.addModule(networkControl);
   modules.addModule(new HeatingController());
-  modules.addModule(displayControl);
+  //modules.addModule(displayControl);
 
   setup();
 }

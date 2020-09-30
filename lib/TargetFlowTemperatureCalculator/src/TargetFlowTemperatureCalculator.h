@@ -1,6 +1,8 @@
 #ifndef TARGETFLOWTEMPERATURECALCULATOR_H_
 #define TARGETFLOWTEMPERATURECALCULATOR_H_
 
+#include <ArduinoLog.h>
+
 class TargetFlowTemperatureCalculator {
     public:
         double calculateTargetFlowTemperature(double outsideTemperature);
@@ -10,7 +12,8 @@ class TargetFlowTemperatureCalculator {
 
     private:
         double slope = -0.5;
-        double origin = 30.0;
+        double origin = 32.0;
+        double maxFlowTemp = 40.0;
 };
 
 #endif

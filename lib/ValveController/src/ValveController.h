@@ -20,7 +20,7 @@ class ValveController : public PrefsClient {
         void configUpdate(const char *id, const char *value);    
 
     private:
-        static const int VALVE_ONE_PERCENT_OPEN_CYCLES = 45;
+        static const int VALVE_ONE_PERCENT_OPEN_CYCLES = 55;
 
         Prefs *prefs = Prefs::getInstance();
 
@@ -32,6 +32,8 @@ class ValveController : public PrefsClient {
         int valveCurrent = 0;
         int valveTarget = 0;
         int tempValveTarget = 0;
+
+        int8_t valveState = 0;
 };
 
 #endif

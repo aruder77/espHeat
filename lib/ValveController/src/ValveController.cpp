@@ -8,12 +8,6 @@ void ValveController::setup() {
     pinMode(openPin, OUTPUT);
     pinMode(closePin, OUTPUT);
 
-    // set valve to a defined, safe value (0%)
-    digitalWrite(openPin, HIGH);
-    digitalWrite(closePin, LOW);
-
-    delay(VALVE_ONE_PERCENT_OPEN_CYCLES * 10 * 100);
-    
     digitalWrite(openPin, LOW);
     digitalWrite(closePin, HIGH);
 
@@ -26,30 +20,44 @@ void ValveController::setup() {
 void ValveController::every10Milliseconds() {
     // adjust 2-point regulation
     if (motorAdjustCounter > 0) {
-        digitalWrite(openPin, HIGH);
-        digitalWrite(closePin, LOW);
+        if (valveState != 1) {
+            Log.trace("opening valve...\n");
+            valveState = 1;
+            digitalWrite(openPin, HIGH);
+            digitalWrite(closePin, LOW);
+        }
         if ((motorAdjustCounter % VALVE_ONE_PERCENT_OPEN_CYCLES) == 0 && valveCurrent < 100) {
             valveCurrent++;
             adjustTargetValvePosition();
         }
         motorAdjustCounter--;    
     } else if (motorAdjustCounter < 0) {
-        digitalWrite(openPin, LOW);
-        digitalWrite(closePin, HIGH);
+        if (valveState != 1) {
+            Log.trace("closing valve...\n");
+            valveState = -1;
+            digitalWrite(openPin, LOW);
+            digitalWrite(closePin, HIGH);
+        }
         if ((motorAdjustCounter % VALVE_ONE_PERCENT_OPEN_CYCLES) == 0 && valveCurrent > 0) {
             valveCurrent--;
             adjustTargetValvePosition();
         }
         motorAdjustCounter++;
     } else {
-        // keep current valve position
-        digitalWrite(openPin, LOW);
-        digitalWrite(closePin, LOW);
+        if (valveState != 0) {
+            Log.trace("keeping valve state...\n");
+            valveState = 0;
+
+            // keep current valve position
+            digitalWrite(openPin, LOW);
+            digitalWrite(closePin, LOW);
+        }
         adjustTargetValvePosition();
     }
 }
 
 void ValveController::adjustTargetValvePosition() {
+    // check, if new target was set in the meantime...
     if (tempValveTarget != valveTarget) {
         this->valveTarget = tempValveTarget;
         Log.verbose("Ventil Ziel: %d\n", valveTarget);

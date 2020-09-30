@@ -1,13 +1,13 @@
 #include "TargetFlowTemperatureCalculator.h"
 
 double TargetFlowTemperatureCalculator::calculateTargetFlowTemperature(double outsideTemperature) {
-    return this->origin + outsideTemperature * slope;
+    return min(origin + outsideTemperature * slope, maxFlowTemp);
 }
 
-void TargetFlowTemperatureCalculator::setFlowTemperatureSlope(double slope) {
-    this->slope = slope;
+void TargetFlowTemperatureCalculator::setFlowTemperatureSlope(double s) {
+    slope = s;
 }
 
-void TargetFlowTemperatureCalculator::setFlowTemperatureOrigin(double origin) {
-    this->origin = origin;
+void TargetFlowTemperatureCalculator::setFlowTemperatureOrigin(double o) {
+    origin = o;
 }
