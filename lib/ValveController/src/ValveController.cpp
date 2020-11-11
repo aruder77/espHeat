@@ -21,7 +21,7 @@ void ValveController::every10Milliseconds() {
     // adjust 2-point regulation
     if (motorAdjustCounter > 0) {
         if (valveState != 1) {
-            Log.trace("opening valve...\n");
+            Homie.getLogger() << "opening valve..." << endl;
             valveState = 1;
             digitalWrite(openPin, HIGH);
             digitalWrite(closePin, LOW);
@@ -33,7 +33,7 @@ void ValveController::every10Milliseconds() {
         motorAdjustCounter--;    
     } else if (motorAdjustCounter < 0) {
         if (valveState != 1) {
-            Log.trace("closing valve...\n");
+            Homie.getLogger() << "closing valve..." << endl;
             valveState = -1;
             digitalWrite(openPin, LOW);
             digitalWrite(closePin, HIGH);
@@ -45,7 +45,7 @@ void ValveController::every10Milliseconds() {
         motorAdjustCounter++;
     } else {
         if (valveState != 0) {
-            Log.trace("keeping valve state...\n");
+            Homie.getLogger() << "keeping valve state..." << endl;
             valveState = 0;
 
             // keep current valve position
@@ -60,7 +60,7 @@ void ValveController::adjustTargetValvePosition() {
     // check, if new target was set in the meantime...
     if (tempValveTarget != valveTarget) {
         this->valveTarget = tempValveTarget;
-        Log.verbose("Ventil Ziel: %d\n", valveTarget);
+        Homie.getLogger() << "Ventil Ziel: " << valveTarget << endl;
 
         // if completely open or closed, make sure it is really completely open/closed.
         if (valveTarget == 100 && valveCurrent < 100) {
@@ -69,17 +69,12 @@ void ValveController::adjustTargetValvePosition() {
             valveTarget = -3;
         }
         motorAdjustCounter = max(-103.0, min(103.0, (double)(valveTarget - valveCurrent))) * VALVE_ONE_PERCENT_OPEN_CYCLES;
-        Log.trace("MotorAdjustCounter: %d\n", motorAdjustCounter);
+        Homie.getLogger() << "MotorAdjustCounter: " << motorAdjustCounter << endl;
     }
 }
 
 void ValveController::setTargetValvePosition(int valveTarget) {
     tempValveTarget = valveTarget;
-}
-
-
-void ValveController::configUpdate(const char *id, const char *value) {
-    Log.notice("ValveController config update: %s\n", id);
 }
 
 int ValveController::getValveCurrent() {

@@ -1,12 +1,11 @@
 #ifndef VALVECONTROLLER_H_
 #define VALVECONTROLLER_H_
 
-#include <Prefs.h>
 #include <math.h>
-#include <ArduinoLog.h>
+#include <Arduino.h>
+#include <Homie.h>
 
-
-class ValveController : public PrefsClient {
+class ValveController {
 
     public:
         ValveController();
@@ -17,12 +16,8 @@ class ValveController : public PrefsClient {
         int getValveTarget();
         void adjustTargetValvePosition();
 
-        void configUpdate(const char *id, const char *value);    
-
     private:
         static const int VALVE_ONE_PERCENT_OPEN_CYCLES = 55;
-
-        Prefs *prefs = Prefs::getInstance();
 
         uint8_t openPin = 19;
         uint8_t closePin = 18;

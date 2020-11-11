@@ -14,15 +14,15 @@ int FlowTemperatureRegulator::calculateValveTarget(double currentFlowTemperature
 
     pidController->Compute();
     char buffer[100];
-    sprintf(buffer, "FlowTemperatureRegulator: Current: %.1f, Target: %.1f, ValveTarget: %.1f\n", this->currentFlowTemperature, this->targetFlowTemperature, valveTarget);
-    Log.notice(buffer);
+    sprintf(buffer, "FlowTemperatureRegulator: Current: %.1f, Target: %.1f, ValveTarget: %.1f", this->currentFlowTemperature, this->targetFlowTemperature, valveTarget);
+    Homie.getLogger() << buffer << endl;
     return (int)valveTarget;
 }
 
 void FlowTemperatureRegulator::setTunings(double kp, double tn) {
     char buffer[100];
-    sprintf(buffer, "new PID-settings: kp %.1f, tn %.1f\n", kp, tn);
-    Log.notice(buffer);
+    sprintf(buffer, "new PID-settings: kp %.1f, tn %.1f", kp, tn);
+    Homie.getLogger() << buffer << endl;
     kP = kp;
     kI = kp/tn;
     pidController->SetTunings(kP, kI, kD, DIRECT);

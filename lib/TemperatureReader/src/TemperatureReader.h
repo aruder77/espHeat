@@ -1,14 +1,13 @@
 #ifndef TEMERATUREREADER_H_
 #define TEMERATUREREADER_H_
 
-#include <Prefs.h>
 #include <driver/adc.h>
 #include <esp_adc_cal.h>
-#include <ArduinoLog.h>
 #include <Filters.h>
 #include <Arduino.h>
+#include <Homie.h>
 
-class TemperatureReader : public PrefsClient {
+class TemperatureReader {
 
     public:
         TemperatureReader();
@@ -17,8 +16,6 @@ class TemperatureReader : public PrefsClient {
         double getOutsideTemperature();
         double getFlowTemperature();
         double getReturnTemperature();
-
-        void configUpdate(const char *id, const char *value);    
 
     private:
         static constexpr float RESISTANCE_FACTOR = 1.429f;
@@ -33,7 +30,6 @@ class TemperatureReader : public PrefsClient {
         static const int JITTER_TOLERANCE = 1;
         static constexpr float LOW_PASS_FREQUENCY = 1.0;
 
-        Prefs *prefs;
         FilterOnePole *afFilter;
         FilterOnePole *ruefFilter;
         FilterOnePole *vfFilter;

@@ -16,35 +16,6 @@
 
 #include <Controller.h>
 
-void progress(DlState state, int percent)
-{
-  Log.notice("state = %d - percent = %d\n", state, percent);
-}
-
-void error(char *message) {
-  Log.error(message);
-}
-
-void startDl(void) {
-}
-
-void endDl(void) {
-}
-
-void click() {
-  Log.notice("Klick!");
-  Controller::getInstance()->buttonClick();
-}
-
-void doubleClick() {
-  Log.notice("DoubleKlick!");
-  Controller::getInstance()->buttonDoubleClick();
-}
-
-void longPressed() {
-  Log.notice("LongPress!");
-  Controller::getInstance()->buttonLongPressed();
-}
 
 void Modules::addModule(Module *module) {
   modules[length++] = module;
@@ -100,35 +71,6 @@ void Modules::everySecond() {
   }  
 };
 
-void Modules::getTelemetryData(char *targetBuffer) {
-  char telemetryBuffer[1024] = {0};
-  strcpy(telemetryBuffer, "{");
-  int currentLength = 1;
-  for (int i = 0; i < length; i++) {
-    strcpy(telemetryBuffer + currentLength, "\"");
-    currentLength += 1;
-
-    const char *moduleName = modules[i]->getName();
-    strcpy(telemetryBuffer + currentLength, moduleName);
-    currentLength += strlen(moduleName);
-
-    strcpy(telemetryBuffer + currentLength, "\":");
-    currentLength += 2;
-
-    char moduleBuffer[200] = {0};
-    modules[i]->getTelemetryData(moduleBuffer);
-    strcpy(telemetryBuffer + currentLength, moduleBuffer);
-    currentLength += strlen(moduleBuffer);
-
-    if (i != length-1) {
-      strcpy(telemetryBuffer + currentLength, ",");
-      currentLength += 1;
-    }
-  }
-  strcpy(telemetryBuffer + currentLength, "}");
-  strcpy(targetBuffer, telemetryBuffer);
-};
-
 Controller *Controller::instance = 0;
 
 Controller *Controller::getInstance()
@@ -145,70 +87,29 @@ Controller *Controller::getInstance()
 
 
 
-void Controller::commandReceived(const char *command, const char *payload) {
-  if (strcmp(OTA_TOPIC, command) == 0) {
-    memset(url, 0, 100);
-    memset(md5_check, 0, 50);
-    char *tmp = strstr(payload, "url:");
-    char *tmp1 = strstr(payload, ",");
-    if (!tmp || !tmp1) {
-      Log.warning("unsupported payload format!\n");
-      return;
-    }
-    memcpy(url, tmp + strlen("url:"), tmp1 - (tmp + strlen("url:")));
-
-    char *tmp2 = strstr(payload, "md5:");
-    int length = strlen(payload);
-    memcpy(md5_check, tmp2 + strlen("md5:"), length - (tmp2 + strlen("md5:") - &payload[0]));
-
-    Log.notice("started fota url: %s\n", url);
-    Log.notice("started fota md5: %s\n", md5_check);
-    state = Fota_e;
-  }
-}
-
-
 Controller::Controller()
 {
+
+  static Controller* controller = this;
+
   // put your setup code here, to run once:
   Serial.begin(BAUD_RATE);
-  Log.begin(LOG_LEVEL_TRACE, &Serial);
-
-  prefs = Prefs::getInstance();
-  Log.notice("Controller Prefs %d\n", prefs);
-  ledController = LedController::getInstance();
-
-  // register prefs
-  prefs->registerConfigParam("ConfigPortalPin", "Config-Portal Pin", "13", 3, this);
-
-  // short press -> reset
-  // long press 10 sec -> complete reset
-  // double press -> config mode
 
   // create all modules 
-  networkControl = NetworkControl::getInstance();
-  //displayControl = DisplayControl::getInstance();
-  modules.addModule(networkControl);
-  modules.addModule(new HeatingController());
-  //modules.addModule(displayControl);
+  modules.addModule(HeatingController::getInstance());
+  modules.addModule(DisplayControl::getInstance());
 
-  setup();
+  Homie_setFirmware("espHeat", VERSION);
+  Homie_setBrand("espHeat");  
+  Homie.setSetupFunction([]() { controller->setup(); });
+
+  Homie.setup();  
 }
 
 Controller::~Controller() {
 }
 
 void Controller::setup() {
-  enterConfigPortalPin = prefs->getInt("ConfigPortalPin");
-  enterConfigPortalPin = 27;
-  /*oneButton = new OneButton(enterConfigPortalPin, true);
-  oneButton->setPressTicks(LONG_PRESS_TIME);
-  oneButton->attachClick(click);
-  oneButton->attachDoubleClick(doubleClick);
-  oneButton->attachLongPressStop(longPressed);*/
-  
-  networkControl->subscribeToCommand(OTA_TOPIC, this);
-
   for (int i = 0; i < modules.count(); i++) {
     modules.getAt(i)->setup();
   }
@@ -217,122 +118,37 @@ void Controller::setup() {
     modules.getAt(i)->afterSetup();
   }
 
+  DisplayControl::getInstance()->displayVersion(VERSION);
 }
 
 
 void Controller::loop()
 {
+  Homie.loop();
+
   unsigned long currentMillis = millis();
 
-  //oneButton->tick();
+  modules.loop();
 
-  switch (state)
-  {
-  case Runnning_e:
+  if (currentMillis > timer) {
+      timer = timer + LOOP_INTERVAL_IN_MS;
+      modules.every10Milliseconds();
 
-    // is configuration portal requested?
-    if ( wasClicked ) {
-      wasClicked = false;
-      Log.notice("Entering config portal...\n");
-      networkControl->enterConfigPortal();
+      // every 50 milliseconds
+      if (loopCounter % 5 == 0) {
+        modules.every50Milliseconds();
+      } 
 
-      //if you get here you have connected to the WiFi
-      Log.notice("connected...yeey :)\n");
-    }
+      // every 100 milliseconds
+      if (loopCounter % 10 == 0) {
+        modules.every100Milliseconds();
+      }
 
-    // reset per double click requested
-    if (wasDoubleClicked) {
-      wasDoubleClicked = false;
-      Log.notice("Resetting controller...\n");
-      ESP.restart();
-    }
+      // every second
+      if (loopCounter % 100 == 0) {
+        modules.everySecond();
+      }
 
-    // reset completely as requested per long click
-    if (wasLongClicked) {
-      wasLongClicked = false;
-      Log.notice("Resetting and erasing all configuration...\n");
-      prefs->clear();
-      networkControl->reset();
-      delay(1000);
-      ESP.restart();
-    }
-
-    modules.loop();
-
-    if (currentMillis > timer) {
-        timer = timer + LOOP_INTERVAL_IN_MS;
-        modules.every10Milliseconds();
-
-        // every 50 milliseconds
-        if (loopCounter % 5 == 0) {
-          modules.every50Milliseconds();
-        } 
-
-        // every 100 milliseconds
-        if (loopCounter % 10 == 0) {
-          modules.every100Milliseconds();
-        }
-
-        // every second
-        if (loopCounter % 100 == 0) {
-          modules.everySecond();
-        }
-
-        if (loopCounter % 1000 == 0) {
-          char telemetryData[1024];
-          modules.getTelemetryData(telemetryData);
-          networkControl->sendTelemetry(telemetryData);
-        }
-
-        loopCounter++;
-    }    
-
-    break;
-
-  case Fota_e:
-    ledController->blinkSlow();
-
-    DlInfo info;
-    char urlStr[100];
-    strcpy(urlStr, url);
-    info.url = urlStr;
-    char md5Str[50];
-    strcpy(md5Str, md5_check);
-    info.md5 = md5Str;
-    info.startDownloadCallback = startDl;
-    info.endDownloadCallback = endDl;
-    info.progressCallback = progress;
-    info.errorCallback = error;
-    info.caCert = NULL;
-    Log.notice("starting ota update!\n");
-    Log.notice("URL: %s\n", urlStr);
-    Log.notice("md5: %s\n", md5Str);
-    networkControl->sendStat(OTA_TOPIC, "starting ota update!");
-    httpFOTA.start(info);
-
-    networkControl->sendStat(OTA_TOPIC, "ok");
-    break;
-  default:
-    break;
-  }
-}
-
-void Controller::buttonClick() {
-  wasClicked = true;
-}
-
-void Controller::buttonDoubleClick() {
-  wasDoubleClicked = true;
-}
-
-void Controller::buttonLongPressed() {
-  wasLongClicked = true;
-}
-
-void Controller::configUpdate(const char *id, const char *value) {
-    enterConfigPortalPin = atoi(value);
-}
-
-void Controller::getTelemetryData(char *targetBuffer) {
-  sprintf(targetBuffer, "\"\"");
+      loopCounter++;
+  }    
 }

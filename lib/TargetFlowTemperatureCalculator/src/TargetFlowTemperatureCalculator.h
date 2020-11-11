@@ -1,7 +1,7 @@
 #ifndef TARGETFLOWTEMPERATURECALCULATOR_H_
 #define TARGETFLOWTEMPERATURECALCULATOR_H_
 
-#include <ArduinoLog.h>
+#include <Arduino.h>
 
 class TargetFlowTemperatureCalculator {
     public:

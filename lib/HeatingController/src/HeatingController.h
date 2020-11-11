@@ -2,7 +2,6 @@
 #define HEATING_CONTROLLER_H_
 
 #include <Module.h>
-#include <Prefs.h>
 #include <ArduinoLog.h>
 #include <FlowTemperatureRegulator.h>
 #include <TargetFlowTemperatureCalculator.h>
@@ -10,23 +9,30 @@
 #include <TemperatureReader.h>
 #include <HeatPumpController.h>
 
-class HeatingController : public Module, public PrefsClient {
+class HeatingController : public Module {
 
     public:
-        HeatingController();
-
+    	static HeatingController* getInstance(); 	
+    
         const char *getName();
         void setup();
+        void afterSetup();
         void everySecond();
         void every10Milliseconds();        
 
         void getTelemetryData(char *targetBuffer);
 
-        void configUpdate(const char *id, const char *value);
+        void setFlowTemperatureSlope(float slope);
+        void setFlowTemperatureOrigin(float origin);
+        void setPidKp(int kp);
+        void setPidTn(int tn);
 
     private:
 
-        Prefs *prefs = Prefs::getInstance();
+        static HeatingController *instance;
+        HeatingController();
+
+        HomieNode *heatNode;
 
         TemperatureReader *temperatureReader;
         FlowTemperatureRegulator *flowTemperatureRegulator;

@@ -1,8 +1,6 @@
 #include "TemperatureReader.h"
 
 TemperatureReader::TemperatureReader() {
-    prefs = Prefs::getInstance();
-
     setup();
 }
 
@@ -16,16 +14,17 @@ void TemperatureReader::setup() {
     adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_0db);
     adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_0db);
 
-    Log.notice("coeff_a: %d\n", adc_chars->coeff_a);
-    Log.notice("coeff_b: %d\n", adc_chars->coeff_b);
-    Log.notice("v_ref: %d\n", adc_chars->vref);
+    Homie.getLogger() << "coeff_a: " << adc_chars->coeff_a << endl;
+    Homie.getLogger() << "coeff_b: " << adc_chars->coeff_b << endl;
+    Homie.getLogger() << "v_ref: " << adc_chars->vref << endl;
+    
     //Check type of calibration value used to characterize ADC
     if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF) {
-        Log.notice("eFuse Vref\n");
+        Homie.getLogger() << "eFuse Vref" << endl;
     } else if (val_type == ESP_ADC_CAL_VAL_EFUSE_TP) {
-        Log.notice("Two Point\n");
+        Homie.getLogger() << "Two Point" << endl;
     } else {
-        Log.notice("Default\n");
+        Homie.getLogger() << "Default" << endl;
     }    
 
     afFilter = new FilterOnePole(LOWPASS, LOW_PASS_FREQUENCY);
@@ -63,7 +62,7 @@ double TemperatureReader::getOutsideTemperature() {
     double afTemperature = calculateTemperature(afResistence, OUTSIDE_TEMP_OFFSET, OUTSIDE_TEMP_FACTOR);
         char logData[100] = {0};
         sprintf(logData, "outside: voltage:%.1f, resistence:%d, temperature:%.1f\n", afVoltage, afResistence, afTemperature);
-        Log.notice(logData);
+        Homie.getLogger() << logData;
     return afTemperature;
 }
 
@@ -73,7 +72,7 @@ double TemperatureReader::getFlowTemperature() {
     double vfTemperature = calculateTemperature(vfResistence, OUTSIDE_TEMP_OFFSET, OUTSIDE_TEMP_FACTOR);
         char logData[100] = {0};
         sprintf(logData, "flow: voltage:%.1f, resistence:%d, temperature:%.1f\n", vfVoltage, vfResistence, vfTemperature);
-        Log.notice(logData);
+        Homie.getLogger() << logData;
     return vfTemperature;
 }
 
@@ -83,10 +82,6 @@ double TemperatureReader::getReturnTemperature() {
     double ruefTemperature = calculateTemperature(ruefResistence, OUTSIDE_TEMP_OFFSET, OUTSIDE_TEMP_FACTOR);
         char logData[100] = {0};
         sprintf(logData, "return: voltage:%.1f, resistence:%d, temperature:%.1f\n", ruefVoltage, ruefResistence, ruefTemperature);
-        Log.notice(logData);
+        Homie.getLogger() << logData;
     return ruefTemperature;
-}
-
-void TemperatureReader::configUpdate(const char *id, const char *value) {
-    Log.notice("TemperatureReader config update: %s\n", id);
 }

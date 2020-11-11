@@ -2,8 +2,8 @@
 #define FLOWTEMPERATUREREGULATOR_H_
 
 #include <PID_v1.h>
-#include <ArduinoLog.h>
-
+#include <Arduino.h>
+#include <Homie.h>
 
 class FlowTemperatureRegulator {
     public:
