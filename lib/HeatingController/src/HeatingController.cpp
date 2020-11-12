@@ -103,6 +103,11 @@ HeatingController::HeatingController() {
             .setName("valve target setting")
             .setDatatype("integer")
             .setUnit("%");            
+
+    heatNode->advertise("heatPump")
+            .setName("heat pump on/off")
+            .setDatatype("enum")
+            .setFormat("on,off");            
 }
 
 const char *HeatingController::getName() {
@@ -123,6 +128,7 @@ void HeatingController::setup() {
 
     // always on for now
     heatPumpController->on();
+    heatNode->setProperty("heatPump").send("on");
 }
 
 void HeatingController::afterSetup() {
