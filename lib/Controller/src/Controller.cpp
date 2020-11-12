@@ -102,6 +102,7 @@ Controller::Controller()
   Homie_setFirmware("espHeat", VERSION);
   Homie_setBrand("espHeat");  
   Homie.setSetupFunction([]() { controller->setup(); });
+  Homie.setLoopFunction([]() { controller->workLoop(); });
 
   Homie.setup();  
 }
@@ -110,22 +111,29 @@ Controller::~Controller() {
 }
 
 void Controller::setup() {
+  Homie.getLogger() << "setup start" <<endl;
   for (int i = 0; i < modules.count(); i++) {
     modules.getAt(i)->setup();
   }
+  Homie.getLogger() << "afterSetup start" <<endl;
 
   for (int i = 0; i < modules.count(); i++) {
     modules.getAt(i)->afterSetup();
   }
+  Homie.getLogger() << "afterSetup end" <<endl;
 
   DisplayControl::getInstance()->displayVersion(VERSION);
+  Homie.getLogger() << "after display" <<endl;
 }
 
 
 void Controller::loop()
 {
   Homie.loop();
+}
 
+void Controller::workLoop()
+{
   unsigned long currentMillis = millis();
 
   modules.loop();

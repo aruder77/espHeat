@@ -2,7 +2,6 @@
 #define HEATING_CONTROLLER_H_
 
 #include <Module.h>
-#include <ArduinoLog.h>
 #include <FlowTemperatureRegulator.h>
 #include <TargetFlowTemperatureCalculator.h>
 #include <ValveController.h>

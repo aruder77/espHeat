@@ -78,6 +78,31 @@ HeatingController::HeatingController() {
 			.setName("PID-Constant Tn")
 			.setDatatype("integer")
 			.settable(pidTnHandler);
+
+    heatNode->advertise("flowTemperature")
+            .setName("flow temperature")
+            .setDatatype("float")
+            .setUnit("°C");
+
+    heatNode->advertise("outsideTemperature")
+            .setName("outside temperature")
+            .setDatatype("float")
+            .setUnit("°C");
+
+    heatNode->advertise("targetFlowTemperature")
+            .setName("target flow temperature")
+            .setDatatype("float")
+            .setUnit("°C");
+
+    heatNode->advertise("valveSetting")
+            .setName("current valve setting")
+            .setDatatype("integer")
+            .setUnit("%");
+
+    heatNode->advertise("valveTarget")
+            .setName("valve target setting")
+            .setDatatype("integer")
+            .setUnit("%");            
 }
 
 const char *HeatingController::getName() {
@@ -136,10 +161,18 @@ void HeatingController::everySecond() {
 
         double targetFlowTemperature = targetFlowTemperatureCalculator->calculateTargetFlowTemperature(outsideTemperature);
         int valveTarget = flowTemperatureRegulator->calculateValveTarget(flowTemperature, targetFlowTemperature);
+        int valveCurrent = valveController->getValveCurrent();
         valveController->setTargetValvePosition(valveTarget);
+
+        heatNode->setProperty("flowTemperature").send(String(flowTemperature));
+        heatNode->setProperty("outsideTemperature").send(String(outsideTemperature));
+        heatNode->setProperty("targetFlowTemperature").send(String(targetFlowTemperature));
+        heatNode->setProperty("valveTarget").send(String(valveTarget));
+        heatNode->setProperty("valveSetting").send(String(valveCurrent));
+
         char printStr[100];
-        sprintf(printStr, "Ventil aktuell: %d, Ziel: %d\n", valveController->getValveCurrent(), valveTarget);
-        Log.notice(printStr);
+        sprintf(printStr, "Ventil aktuell: %d, Ziel: %d\n", valveCurrent, valveTarget);
+        Homie.getLogger() << printStr;
 
         loopCounter = 0;
     }
@@ -149,18 +182,4 @@ void HeatingController::everySecond() {
 void HeatingController::every10Milliseconds() {
     valveController->every10Milliseconds();
     temperatureReader->readTemperatures();
-}
-
-void HeatingController::getTelemetryData(char *targetBuffer) {
-    double outsideTemperature = temperatureReader->getOutsideTemperature();
-    double flowTemperature = temperatureReader->getFlowTemperature();
-    double returnTemperature = temperatureReader->getReturnTemperature();
-    int valveCurrent = valveController->getValveCurrent();
-    int valveTarget = valveController->getValveTarget();
-    double targetFlowTemperature = targetFlowTemperatureCalculator->calculateTargetFlowTemperature(outsideTemperature);
-
-
-    char telemetryData[300] = {0};
-    sprintf(telemetryData, "{\"outside\":%.1f,\"return\":%.1f,\"flow\":%.1f,\"targetFlowTemperature\":%.1f,\"valveCurrent\":%d,\"valveTarget\":%d,\"flowTemperatureOrigin\":%.1f,\"flowTemperatureSlope\":%.1f}", outsideTemperature, returnTemperature, flowTemperature, targetFlowTemperature, valveCurrent, valveTarget, flowTempOrigin, flowTempSlope);
-    strcpy(targetBuffer, telemetryData);
 }
