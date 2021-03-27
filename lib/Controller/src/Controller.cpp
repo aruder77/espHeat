@@ -97,7 +97,7 @@ Controller::Controller()
 
   // create all modules 
   modules.addModule(HeatingController::getInstance());
-  modules.addModule(DisplayControl::getInstance());
+  //modules.addModule(DisplayControl::getInstance());
 
   Homie_setFirmware("espHeat", VERSION);
   Homie_setBrand("espHeat");  
@@ -111,19 +111,15 @@ Controller::~Controller() {
 }
 
 void Controller::setup() {
-  Homie.getLogger() << "setup start" <<endl;
   for (int i = 0; i < modules.count(); i++) {
     modules.getAt(i)->setup();
   }
-  Homie.getLogger() << "afterSetup start" <<endl;
 
   for (int i = 0; i < modules.count(); i++) {
     modules.getAt(i)->afterSetup();
   }
-  Homie.getLogger() << "afterSetup end" <<endl;
 
-  DisplayControl::getInstance()->displayVersion(VERSION);
-  Homie.getLogger() << "after display" <<endl;
+  //DisplayControl::getInstance()->displayVersion(VERSION);
 }
 
 

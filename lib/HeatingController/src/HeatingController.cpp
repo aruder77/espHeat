@@ -40,6 +40,16 @@ bool pidTnHandler(const HomieRange& range, const String& value) {
   	return true;
 }
 
+bool numberOfOpenValvesHandler(const HomieRange& range, const String& value) {
+    int intValue = value.toInt();
+	if (intValue < 0 || intValue > 100) {
+		return false;
+	}
+
+	HeatingController::getInstance()->setNumberOfOpenValues(intValue);
+  	return true;    
+}
+
 HeatingController *HeatingController::instance = 0;
 
 HeatingController *HeatingController::getInstance()
@@ -94,6 +104,11 @@ HeatingController::HeatingController() {
             .setDatatype("float")
             .setUnit("°C");
 
+    heatNode->advertise("returnTemperature")
+            .setName("return temperature")
+            .setDatatype("float")
+            .setUnit("°C");
+
     heatNode->advertise("valveSetting")
             .setName("current valve setting")
             .setDatatype("integer")
@@ -108,6 +123,11 @@ HeatingController::HeatingController() {
             .setName("heat pump on/off")
             .setDatatype("enum")
             .setFormat("on,off");            
+
+    heatNode->advertise("numberOfOpenValves")
+            .setName("number of open room valves")
+            .setDatatype("integer")
+            .settable(numberOfOpenValvesHandler);
 }
 
 const char *HeatingController::getName() {
@@ -158,12 +178,31 @@ void HeatingController::setPidTn(int tn) {
     flowTemperatureRegulator->setTunings(this->kp, tn);
 }
 
+void HeatingController::setNumberOfOpenValues(int numberOfOpenValues) {
+    this->numberOfOpenValves = numberOfOpenValues;
+    if (numberOfOpenValues == 0) {
+        heatPumpController->off();
+        heatNode->setProperty("heatPump").send("off");
+    } else {
+        heatPumpController->on();
+        heatNode->setProperty("heatPump").send("on");
+    }
+}
+
 
 void HeatingController::everySecond() {
-    // every 10 seconds
-    if (loopCounter == 10) {
+    if (dayLoopCounter == 3600 * 24) {
+        calibrationInProgress = true;
+        valveController->setTargetValvePosition(0);
+
+        dayLoopCounter = 0;
+    } 
+
+    // every 10 seconds (skip during calibration)
+    if (loopCounter >= 10 && !calibrationInProgress) {
         double flowTemperature = temperatureReader->getFlowTemperature();
         double outsideTemperature = temperatureReader->getOutsideTemperature();
+        double returnTemperature = temperatureReader->getReturnTemperature();
 
         double targetFlowTemperature = targetFlowTemperatureCalculator->calculateTargetFlowTemperature(outsideTemperature);
         int valveTarget = flowTemperatureRegulator->calculateValveTarget(flowTemperature, targetFlowTemperature);
@@ -173,6 +212,7 @@ void HeatingController::everySecond() {
         heatNode->setProperty("flowTemperature").send(String(flowTemperature));
         heatNode->setProperty("outsideTemperature").send(String(outsideTemperature));
         heatNode->setProperty("targetFlowTemperature").send(String(targetFlowTemperature));
+        heatNode->setProperty("returnTemperature").send(String(returnTemperature));
         heatNode->setProperty("valveTarget").send(String(valveTarget));
         heatNode->setProperty("valveSetting").send(String(valveCurrent));
 
@@ -182,7 +222,14 @@ void HeatingController::everySecond() {
 
         loopCounter = 0;
     }
+
+    // after 30 seconds, end calibration and enter regular mode
+    if (loopCounter >= 30) {
+        calibrationInProgress = false;
+    }
+
     loopCounter++;
+    dayLoopCounter++;
 }
 
 void HeatingController::every10Milliseconds() {

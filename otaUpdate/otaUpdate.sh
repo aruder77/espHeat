@@ -1,1 +1,1 @@
-../../homie-esp8266/scripts/ota_updater/ota_updater.py -l 192.168.178.27 -u "mqttAccess" -d "w62D?F[m" -t "devices/" -i "espVent" ../.pio/build/nodemcu-32s/firmware.bin
+../../homie-esp8266/scripts/ota_updater/ota_updater.py -l 192.168.178.27 -u "mqttAccess" -d "w62D?F[m" -t "devices/" -i "espHeat" ../.pio/build/nodemcu-32s/firmware.bin

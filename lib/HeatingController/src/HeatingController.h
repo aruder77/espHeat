@@ -26,6 +26,8 @@ class HeatingController : public Module {
         void setPidKp(int kp);
         void setPidTn(int tn);
 
+        void setNumberOfOpenValues(int numberOfOpenValves);
+
     private:
 
         static HeatingController *instance;
@@ -41,6 +43,8 @@ class HeatingController : public Module {
 
         unsigned long timer = 0;
         int loopCounter = 0;
+        int dayLoopCounter = 0;
+        bool calibrationInProgress = false;
 
         double flowTempSlope = -0.5;
         double flowTempOrigin = 32.0;
@@ -49,6 +53,8 @@ class HeatingController : public Module {
 
         double kp = 2.0;
         double tn = 120;
+
+        int numberOfOpenValves = 0;
 
 };
 

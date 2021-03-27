@@ -21,7 +21,7 @@
 #include <Module.h>
 #include <DisplayControl.h>
 
-#define VERSION "1.0.0"
+#define VERSION "1.1.0"
 
 class Modules {
     private:
